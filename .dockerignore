@@ -1,0 +1,14 @@
+.venv/
+.git/
+.gitignore
+data/
+notebooks/
+mlruns/
+mlflow.db
+tests/
+__pycache__/
+*.pyc
+*.md
+setup.txt
+CLAUDE.md
+requirements.txt

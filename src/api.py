@@ -91,7 +91,7 @@ class HouseFeatures(BaseModel):
             "Ssn_Porch_3T": "3Ssn_Porch_T",
             "Year_Remod_Add": "Year_Remod/Add",
         }
-        data = self.model_dump()
+        data = self.model_dump()  # model_dump() is inherited from BaseModel, returns dict of field values
         renamed = {mapping.get(k, k): v for k, v in data.items()}
         return pd.DataFrame([renamed])[feature_cols]
 
@@ -100,7 +100,8 @@ class PredictionResponse(BaseModel):
     log_sale_price: float
     estimated_sale_price: float
 
-
+# @ get("/") refers to the root URL, which we can use for a simple health check to confirm the API
+# is running and the model is loaded correctly when accessing the URL.
 @app.get("/")
 def health_check():
     return {"status": "ok", "model": "lgbm", "features": len(feature_cols)}
