@@ -25,6 +25,8 @@ jobs:
           pip install pytest httpx
 
       - name: Run tests
+        env:
+          TZ: UTC
         run: pytest tests/ -v
 
 # You push code → GitHub sees the push → spins up a server → installs your packages → runs your tests → tells you pass or fail
