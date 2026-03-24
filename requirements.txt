@@ -1,0 +1,24 @@
+# Data & ML
+pandas
+numpy
+scikit-learn
+xgboost
+lightgbm
+
+# MLflow
+mlflow
+
+# API Serving
+fastapi
+uvicorn
+
+# Monitoring
+evidently
+
+# Data Download
+kagglehub
+
+
+# Utilities
+python-dotenv
+joblib
