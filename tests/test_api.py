@@ -5,8 +5,10 @@ The model and feature_cols.json are mocked so no real model file is needed —
 this lets the tests run in CI without access to the models/ directory.
 """
 
+import builtins
 import json
-from unittest.mock import MagicMock, patch, mock_open
+from io import StringIO
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -32,11 +34,19 @@ mock_model.predict.return_value = [12.0]
 # Patch joblib.load and open before src.api is imported so the module-level
 # model loading doesn't fail looking for real files
 
-# Code below says: during the import of src.api, intercept any call to joblib.load 
-# and return our fake model instead, and intercept any open() call and return our 
-# fake feature columns list. The real files are never touched.
+# We only want to mock open() for feature_cols.json, NOT for all files.
+# If we mock builtins.open globally, it breaks other libraries (e.g. dateutil)
+# that need to open real files during import. So we use a selective mock that
+# checks the filename and only fakes the feature_cols.json read.
+_real_open = builtins.open
+
+def _selective_open(*args, **kwargs):
+    if len(args) > 0 and "feature_cols" in str(args[0]):
+        return StringIO(json.dumps(FEATURE_COLS))
+    return _real_open(*args, **kwargs)
+
 with patch("joblib.load", return_value=mock_model), \
-     patch("builtins.open", mock_open(read_data=json.dumps(FEATURE_COLS))):
+     patch("builtins.open", side_effect=_selective_open):
     from src.api import app
 
 
