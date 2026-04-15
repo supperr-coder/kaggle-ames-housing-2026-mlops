@@ -14,8 +14,9 @@ COPY requirements-api.txt .
 RUN pip install --no-cache-dir -r requirements-api.txt
 
 # Copy only what the API needs
+# models/ is NOT copied here — it is mounted from the host server at runtime
+# via docker run -v /app/models:/app/models so the model is never baked into the image
 COPY src/ ./src/
-COPY models/ ./models/
 
 EXPOSE 8000
 

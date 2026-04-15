@@ -10,3 +10,4 @@ mlflow.db
 setup.txt
 CLAUDE.md
 .claude/
+.claudeignore

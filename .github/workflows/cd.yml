@@ -1,0 +1,64 @@
+name: CD
+
+on:
+  workflow_run:
+    workflows: [CI]
+    branches: [main]
+    types: [completed]
+
+jobs:
+  push-image:
+    # Only run if CI passed — don't ship a broken image
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write  # needed to push to ghcr.io
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          # Image name: ghcr.io/<your-github-username>/<repo-name>:latest
+          # Also tags with the commit SHA so you can roll back to any version
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/kaggle-ames-housing-2026-mlops:latest
+            ghcr.io/${{ github.repository_owner }}/kaggle-ames-housing-2026-mlops:${{ github.sha }}
+
+      - name: Deploy to Hetzner
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ${{ secrets.HETZNER_USER }}
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          script: |
+            # Pull the latest image from the registry
+            docker pull ghcr.io/${{ github.repository_owner }}/kaggle-ames-housing-2026-mlops:latest
+
+            # Stop and remove the old container if it exists
+            docker stop ames-api || true
+            docker rm ames-api || true
+
+            # Run the new container
+            # -d: run in background
+            # -p 8000:8000: expose port 8000
+            # -v: mount the models folder from the server into the container
+            docker run -d \
+              --name ames-api \
+              --restart unless-stopped \
+              -p 8000:8000 \
+              -v /app/models:/app/models \
+              ghcr.io/${{ github.repository_owner }}/kaggle-ames-housing-2026-mlops:latest
